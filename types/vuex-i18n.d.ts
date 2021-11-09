@@ -1,10 +1,17 @@
-import _Vue, { PluginObject } from "vue";
+import Vue from "vue";
+
+type PluginObject<T> = (app: Vue.App, ...options: any[]) => any;
 
 declare module "vue/types/vue" {
   interface Vue {
     $i18n: Ii18n;
     $t(key: string, options?: any, pluralization?: number): string | undefined;
-    $t(key: string, defaultValue: string, options?: any, pluralization?: number): string | undefined;
+    $t(
+      key: string,
+      defaultValue: string,
+      options?: any,
+      pluralization?: number,
+    ): string | undefined;
   }
 
   interface VueConstructor<V extends Vue = Vue> {
@@ -60,23 +67,43 @@ export interface Ii18n {
    * get localized string from store. note that we pass the arguments passed
    * to the function directly to the translateInLanguage function
    */
-  translate(key: string, options?: any, pluralization?: number): string | undefined;
+  translate(
+    key: string,
+    options?: any,
+    pluralization?: number,
+  ): string | undefined;
 
   /**
    * get localized string from store. note that we pass the arguments passed
    * to the function directly to the translateInLanguage function
    */
-  translate(key: string, defaultValue: string, options?: any, pluralization?: number): string | undefined;
+  translate(
+    key: string,
+    defaultValue: string,
+    options?: any,
+    pluralization?: number,
+  ): string | undefined;
 
   /**
    * get localized string from store in a given language if available.
    */
-  translateIn(locale: string, key: string, options?: any, pluralization?: number): string | undefined;
+  translateIn(
+    locale: string,
+    key: string,
+    options?: any,
+    pluralization?: number,
+  ): string | undefined;
 
   /**
    * get localized string from store in a given language if available.
    */
-  translateIn(locale: string, key: string, defaultValue: string, options?: any, pluralization?: number): string | undefined;
+  translateIn(
+    locale: string,
+    key: string,
+    defaultValue: string,
+    options?: any,
+    pluralization?: number,
+  ): string | undefined;
 
   /**
    * check if the given locale translations are present in the store

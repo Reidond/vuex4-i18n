@@ -1,196 +1,185 @@
 /* vuex-i18n-store defines a vuex module to store locale translations. Make sure
-** to also include the file vuex-i18n.js to enable easy access to localized
-** strings in your vue components.
-*/
+ ** to also include the file vuex-i18n.js to enable easy access to localized
+ ** strings in your vue components.
+ */
 
 // define a simple vuex module to handle locale translations
-const i18nVuexModule =  {
-	namespaced: true,
-	state: {
-		locale: null,
-		fallback: null,
-		translations: {}
-	},
-	mutations: {
+const i18nVuexModule = {
+  namespaced: true,
+  state: {
+    locale: null,
+    fallback: null,
+    translations: {},
+  },
+  mutations: {
+    // set the current locale
+    SET_LOCALE(state, payload) {
+      state.locale = payload.locale;
+    },
 
-		// set the current locale
-		SET_LOCALE(state, payload) {
-			state.locale = payload.locale;
-		},
+    // add a new locale
+    ADD_LOCALE(state, payload) {
+      // reduce the given translations to a single-depth tree
+      var translations = flattenTranslations(payload.translations);
 
-		// add a new locale
-		ADD_LOCALE(state, payload) {
+      if (state.translations.hasOwnProperty(payload.locale)) {
+        // get the existing translations
+        let existingTranslations = state.translations[payload.locale];
+        // merge the translations
+        state.translations[payload.locale] = Object.assign(
+          {},
+          existingTranslations,
+          translations,
+        );
+      } else {
+        // just set the locale if it does not yet exist
+        state.translations[payload.locale] = translations;
+      }
 
-			// reduce the given translations to a single-depth tree
-			var translations = flattenTranslations(payload.translations);
+      // make sure to notify vue of changes (this might break with new vue versions)
+      try {
+        if (state.translations.__ob__) {
+          state.translations.__ob__.dep.notify();
+        }
+      } catch (ex) {}
+    },
 
-			if (state.translations.hasOwnProperty(payload.locale)) {
-				// get the existing translations
-				let existingTranslations = state.translations[payload.locale];
-				// merge the translations
-				state.translations[payload.locale] = Object.assign({}, existingTranslations, translations);
+    // replace existing locale information with new translations
+    REPLACE_LOCALE(state, payload) {
+      // reduce the given translations to a single-depth tree
+      var translations = flattenTranslations(payload.translations);
 
-			} else {
-				// just set the locale if it does not yet exist
-				state.translations[payload.locale] = translations;
-			}
+      // replace the translations entirely
+      state.translations[payload.locale] = translations;
 
-			// make sure to notify vue of changes (this might break with new vue versions)
-			try {
-				if (state.translations.__ob__) {
-					state.translations.__ob__.dep.notify();
-				}
-			} catch(ex) {}
+      // make sure to notify vue of changes (this might break with new vue versions)
+      try {
+        if (state.translations.__ob__) {
+          state.translations.__ob__.dep.notify();
+        }
+      } catch (ex) {}
+    },
 
-		},
+    // remove a locale from the store
+    REMOVE_LOCALE(state, payload) {
+      // check if the given locale is present in the state
+      if (state.translations.hasOwnProperty(payload.locale)) {
+        // check if the current locale is the given locale to remvoe
+        if (state.locale === payload.locale) {
+          // reset the current locale
+          state.locale = null;
+        }
 
-		// replace existing locale information with new translations
-		REPLACE_LOCALE(state, payload) {
+        // create a copy of the translations object
+        let translationCopy = Object.assign({}, state.translations);
 
-			// reduce the given translations to a single-depth tree
-			var translations = flattenTranslations(payload.translations);
+        // remove the given locale
+        delete translationCopy[payload.locale];
 
-			// replace the translations entirely
-			state.translations[payload.locale] = translations;
+        // set the state to the new object
+        state.translations = translationCopy;
+      }
+    },
 
-			// make sure to notify vue of changes (this might break with new vue versions)
-			try {
-				if (state.translations.__ob__) {
-					state.translations.__ob__.dep.notify();
-				}
-			} catch(ex) {}
+    SET_FALLBACK_LOCALE(state, payload) {
+      state.fallback = payload.locale;
+    },
+  },
+  actions: {
+    // set the current locale
+    setLocale(context, payload) {
+      context.commit({
+        type: "SET_LOCALE",
+        locale: payload.locale,
+      });
+    },
 
-		},
+    // add or extend a locale with translations
+    addLocale(context, payload) {
+      context.commit({
+        type: "ADD_LOCALE",
+        locale: payload.locale,
+        translations: payload.translations,
+      });
+    },
 
-		// remove a locale from the store
-		REMOVE_LOCALE(state, payload) {
+    // replace locale information
+    replaceLocale(context, payload) {
+      context.commit({
+        type: "REPLACE_LOCALE",
+        locale: payload.locale,
+        translations: payload.translations,
+      });
+    },
 
-			// check if the given locale is present in the state
-			if (state.translations.hasOwnProperty(payload.locale)) {
+    // remove the given locale translations
+    removeLocale(context, payload) {
+      context.commit({
+        type: "REMOVE_LOCALE",
+        locale: payload.locale,
+        translations: payload.translations,
+      });
+    },
 
-				// check if the current locale is the given locale to remvoe
-				if (state.locale === payload.locale) {
-					// reset the current locale
-					state.locale = null;
-				}
-
-				// create a copy of the translations object
-				let translationCopy = Object.assign({}, state.translations);
-
-				// remove the given locale
-				delete translationCopy[payload.locale];
-
-				// set the state to the new object
-				state.translations = translationCopy;
-
-			}
-		},
-
-		SET_FALLBACK_LOCALE(state, payload) {
-			state.fallback = payload.locale;
-		}
-
-	},
-	actions: {
-
-		// set the current locale
-		setLocale(context, payload) {
-			context.commit({
-				type: 'SET_LOCALE',
-				locale: payload.locale
-			});
-		},
-
-		// add or extend a locale with translations
-		addLocale(context, payload) {
-			context.commit({
-				type: 'ADD_LOCALE',
-				locale: payload.locale,
-				translations: payload.translations
-			});
-		},
-
-		// replace locale information
-		replaceLocale(context, payload) {
-			context.commit({
-				type: 'REPLACE_LOCALE',
-				locale: payload.locale,
-				translations: payload.translations
-			});
-		},
-
-		// remove the given locale translations
-		removeLocale(context, payload) {
-			context.commit({
-				type: 'REMOVE_LOCALE',
-				locale: payload.locale,
-				translations: payload.translations
-			});
-		},
-
-		setFallbackLocale(context, payload) {
-			context.commit({
-				type: 'SET_FALLBACK_LOCALE',
-				locale: payload.locale
-			});
-		}
-
-	}
+    setFallbackLocale(context, payload) {
+      context.commit({
+        type: "SET_FALLBACK_LOCALE",
+        locale: payload.locale,
+      });
+    },
+  },
 };
 
 // flattenTranslations will convert object trees for translations into a
 // single-depth object tree
 const flattenTranslations = function flattenTranslations(translations) {
+  let toReturn = {};
 
-	let toReturn = {};
+  for (let i in translations) {
+    // check if the property is present
+    if (!translations.hasOwnProperty(i)) {
+      continue;
+    }
 
-	for (let i in translations) {
+    // get the type of the property
+    let objType = typeof translations[i];
 
-		// check if the property is present
-		if (!translations.hasOwnProperty(i)) {
-			continue;
-		}
+    // allow unflattened array of strings
+    if (isArray(translations[i])) {
+      let count = translations[i].length;
 
-		// get the type of the property
-		let objType = typeof translations[i];
+      for (let index = 0; index < count; index++) {
+        let itemType = typeof translations[i][index];
 
-		// allow unflattened array of strings
-		if (isArray(translations[i])) {
+        if (itemType !== "string") {
+          console.warn(
+            "i18n:",
+            "currently only arrays of strings are fully supported",
+            translations[i],
+          );
+          break;
+        }
+      }
 
-			let count = translations[i].length;
+      toReturn[i] = translations[i];
+    } else if (objType == "object" && objType !== null) {
+      let flatObject = flattenTranslations(translations[i]);
 
-			for (let index = 0; index < count; index++) {
-				let itemType = typeof translations[i][index];
+      for (let x in flatObject) {
+        if (!flatObject.hasOwnProperty(x)) continue;
 
-				if (itemType !== 'string') {
-					console.warn('i18n:','currently only arrays of strings are fully supported', translations[i]);
-					break;
-				}
-			}
-
-			toReturn[i] = translations[i];
-
-		} else if (objType == 'object' && objType !== null) {
-
-			let flatObject = flattenTranslations(translations[i]);
-
-			for (let x in flatObject) {
-				if (!flatObject.hasOwnProperty(x)) continue;
-
-				toReturn[i + '.' + x] = flatObject[x];
-			}
-
-		} else {
-			toReturn[i] = translations[i];
-
-		}
-	}
-	return toReturn;
+        toReturn[i + "." + x] = flatObject[x];
+      }
+    } else {
+      toReturn[i] = translations[i];
+    }
+  }
+  return toReturn;
 };
 
 // check if the given object is an array
 function isArray(obj) {
-	return !!obj && Array === obj.constructor;
+  return !!obj && Array === obj.constructor;
 }
 
 export default i18nVuexModule;

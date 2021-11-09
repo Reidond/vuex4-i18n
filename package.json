@@ -1,18 +1,35 @@
 {
-  "name": "vuex-i18n",
+  "name": "vuex4-i18n",
   "version": "1.13.1",
   "description": "Easy localization for vue-components using vuex as data store",
   "directories": {
     "test": "test",
     "doc": "docs",
-    "lib": "src"
+    "lib": "src",
+    "types": "types"
   },
-  "main": "dist/vuex-i18n.es.js",
-  "types": "dist/vuex-i18n.d.ts",
-  "files": ["dist"],
+  "main": "./dist/vuex-i18n.umd.js",
+  "module": "./dist/vuex-i18n.es.js",
+  "exports": {
+    ".": {
+      "import": "./dist/vuex-i18n.es.js",
+      "require": "./dist/vuex-i18n.umd.js"
+    }
+  },
+  "types": "./types/vuex-i18n.d.ts",
+  "files": [
+    "dist",
+    "types"
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/dkfbasel/vuex-i18n.git"
+  },
+  "scripts": {
+    "dev": "vite --config vite-example.config.js ./example",
+    "build:example": "vite build --config vite-example.config.js ./example",
+    "serve": "vite preview --config vite-example.config.js ./example",
+    "build:lib": "vite build"
   },
   "keywords": [
     "localization",
@@ -36,11 +53,35 @@
       "name": "ktquez",
       "email": "ktquez@gmail.com",
       "url": "https://github.com/ktquez"
+    },
+    {
+      "name": "Andrii Shafar",
+      "email": "andrii.shafar@uzhnu.edu.ua",
+      "url": "https://github.com/Reidond"
     }
   ],
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/dkfbasel/vuex-i18n/issues"
   },
-  "homepage": "https://github.com/dkfbasel/vuex-i18n#readme"
+  "homepage": "https://github.com/dkfbasel/vuex-i18n#readme",
+  "dependencies": {
+    "vue": "^3.2.21",
+    "vuex": "^4.0.2"
+  },
+  "peerDependencies": {
+    "vue": "^3.2.21",
+    "vuex": "^4.0.2"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.16.0",
+    "@babel/eslint-parser": "^7.16.0",
+    "@vitejs/plugin-vue": "^1.9.4",
+    "@vue/compiler-sfc": "^3.2.21",
+    "eslint": "^8.2.0",
+    "eslint-config-prettier": "^8.3.0",
+    "eslint-plugin-vue": "^8.0.3",
+    "prettier": "^2.4.1",
+    "vite": "^2.6.13"
+  }
 }
