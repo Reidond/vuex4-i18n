@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "baseUrl": "."
+  },
+  "typeAcquisition": {
+    "exclude": ["source-map", "source-map-js"]
+  },
+  "exclude": [
+    "node_modules",
+    "**/node_modules",
+    "**/.cache/*",
+    "**/.cache/*",
+    "dist/"
+  ]
+}
