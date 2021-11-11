@@ -7,12 +7,12 @@ The main difference to other internationalization plugins is the ease of use
 and support for locales directly with the application or later from the server.
 
 ## Requirements
-- Vue ^2.0.0
-- Vuex ^2.0.0
+- Vue ^3.0.0
+- Vuex ^4.0.0
 
 ## Installation
 ```
-$ npm install vuex-i18n
+$ npm install vuex4-i18n
 ```
 
 ## Setup
@@ -32,11 +32,11 @@ A corresponding example can be found in the test directory.
 ```javascript
 
 // load vue and vuex instance
-import Vue from 'vue';
-import Vuex from 'vuex';
+import {createApp} from 'vue';
+import {createStore} from 'vuex';
 
 // load vuex i18n module
-import vuexI18n from 'vuex-i18n';
+import {VuexI18nPlugin} from 'vuex-i18n';
 
 // IMPORTANT NOTE:
 // The default format for the plugin is in es2015, if you do not use a transpiler
@@ -44,18 +44,31 @@ import vuexI18n from 'vuex-i18n';
 // the umd version should be loaded like this
 // import vuexI18n from 'vuex-i18n/dist/vuex-i18n.umd.js';
 
+// create a new component (requires a div with id app as mount point)
+// you can use the method $t to access translations. the value will be returned
+// as is, if no corresponding key is found in the translations
+const app = createApp({
+	template: `
+		<div>
+			<h1>{{ 'My nice title' | translate }}</h1>
+			<p>{{ $t('content', {'type': 'nice'}) }}</p>
+		</div>
+	`
+});
+
 // initialize the vuex store using the vuex module. note that you can change the
 //  name of the module if you wish
-const store = new Vuex.Store();
+const store = createStore({});
 
 // initialize the internationalization plugin on the vue instance. note that
 // the store must be passed to the plugin. the plugin will then generate some
 // helper functions for components (i.e. this.$i18n.set, this.$t) and on the vue
-// instance (i.e. Vue.i18n.set).
-Vue.use(vuexI18n.plugin, store);
+// instance (i.e. app.config.globalProperties.$i18n.set).
+app.use(store);
+app.use(VuexI18nPlugin, store);
 
 // please note that you must specify the name of the vuex module if it is
-// different from i18n. i.e. Vue.use(vuexI18n.plugin, store, {moduleName: 'myName'})
+// different from i18n. i.e. Vue.use(VuexI18nPlugin, store, {moduleName: 'myName'})
 
 
 // add some translations (could also be loaded from a separate file)
@@ -74,25 +87,13 @@ const translationsDe = {
 };
 
 // add translations directly to the application
-Vue.i18n.add('en', translationsEn);
-Vue.i18n.add('de', translationsDe);
+app.config.globalProperties.$i18n.add('en', translationsEn);
+app.config.globalProperties.$i18n.add('de', translationsDe);
 
 // set the start locale to use
-Vue.i18n.set('en');
+app.config.globalProperties.$i18n.set('en');
 
-// create a new component (requires a div with id app as mount point)
-// you can use the method $t to access translations. the value will be returned
-// as is, if no corresponding key is found in the translations
-var app = new Vue({
-	store,
-	el: '#app',
-	template: `
-		<div>
-			<h1>{{ 'My nice title' | translate }}</h1>
-			<p>{{ $t('content', {'type': 'nice'}) }}</p>
-		</div>
-	`
-});
+app.mount('#app');
 
 ```
 
@@ -111,7 +112,7 @@ subsequent calls of the same key will not trigger the onTranslationNotFound meth
 ```javascript
 
 // without return value (will use fallback translation, default translation or key)
-Vue.use(vuexI18n.plugin, store, {
+app.use(VuexI18nPlugin, store, {
 	moduleName: 'i18n',
 	onTranslationNotFound (locale, key) {
 		console.warn(`i18n :: Key '${key}' not found for locale '${locale}'`);
@@ -122,7 +123,7 @@ Vue.use(vuexI18n.plugin, store, {
 // into the store
 // note: synchronous resolving of keys is not recommended as this functionality
 // should be implemented in a different way
-Vue.use(vuexI18n.plugin, store, {
+app.use(VuexI18nPlugin, store, {
 	moduleName: 'i18n',
 	onTranslationNotFound (locale, key) {
 		switch(key) {
@@ -137,7 +138,7 @@ Vue.use(vuexI18n.plugin, store, {
 
 // with promise as return value. this will write the new value into the store,
 // after the promise is resolved
-Vue.use(vuexI18n.plugin, store, {
+app.use(VuexI18nPlugin, store, {
 	moduleName: 'i18n',
 	onTranslationNotFound (locale, key) {
 
@@ -157,8 +158,8 @@ Vue.use(vuexI18n.plugin, store, {
 
 ```
 ## Config
-You can pass a config object as the third parameter when use vuex-i18n. 
-i.e. Vue.use(vuexI18n.plugin, store, config)
+You can pass a config object as the third parameter when use vuex-i18n.
+i.e. Vue.use(VuexI18nPlugin, store, config)
 
 At present, the configuration options that are supported are as follows:
 
@@ -177,7 +178,7 @@ const config = {
 	translateFilterName: 't'
 }
 
-Vue.use(vuexI18n.plugin, store, config)
+app.use(VuexI18nPlugin, store, config)
 
 ```
 
@@ -233,7 +234,7 @@ Therefore it might be necessary to escape certain characters accordingly.
 
 ```javascript
 // i.e. to use {{count}} as variable substitution.
-Vue.use(vuexI18n.plugin, store, {
+app.use(VuexI18nPlugin, store, {
 	identifiers: ['{{','}}']
 });
 ```
@@ -295,48 +296,48 @@ possible to request a specific locale using the `$tlang()` method.
 </div>
 ```
 
-There are also several methods available on the property `this.$i18n` or `Vue.i18n`
+There are also several methods available on the property `this.$i18n` or `app.config.globalProperties.$i18n`
 
 ```javascript
 
 // translate the given key
-$t(), Vue.i18n.translate()
+$t(), app.config.globalProperties.$i18n.translate()
 
 // translate the given key in a specific locale, also available as filter
 // i.e {{ 'message' | translateIn('en') }}
-$tlang(), Vue.i18n.translateIn()
+$tlang(), app.config.globalProperties.$i18n.translateIn()
 
 // get the current locale
-$i18n.locale(), Vue.i18n.locale()
+$i18n.locale(), app.config.globalProperties.$i18n.locale()
 
 // get all available locales
 // is is however recommended to use a computed property to fetch the locales
 // returning Object.keys(this.$store.state.i18n.translations); as this will
 // make use of vue's caching system.
-$i18n.locales(), Vue.i18n.locales()
+$i18n.locales(), app.config.globalProperties.$i18n.locales()
 
 // set the current locale (i.e. 'de', 'en')
-$i18n.set(locale), Vue.i18n.set(locale)
+$i18n.set(locale), app.config.globalProperties.$i18n.set(locale)
 
 // add locale translation to the storage. this will extend existing information
 // (i.e. 'de', {'message': 'Eine Nachricht'})
-$i18n.add(locale, translations), Vue.i18n.add(locale, translations)
+$i18n.add(locale, translations), app.config.globalProperties.$i18n.add(locale, translations)
 
 // replace locale translations in the storage. this will remove all previous
 // locale information for the specified locale
-$i18n.replace(locale, translations), Vue.i18n.replace(locale, translations)
+$i18n.replace(locale, translations), app.config.globalProperties.$i18n.replace(locale, translations)
 
 // remove the given locale from the store
-$i18n.remove(locale), Vue.i18n.remove(locale)
+$i18n.remove(locale), app.config.globalProperties.$i18n.remove(locale)
 
 // set a fallback locale if translation for current locale does not exist
-$i18n.fallback(locale), Vue.i18n.fallback(locale)
+$i18n.fallback(locale), app.config.globalProperties.$i18n.fallback(locale)
 
 // check if the given locale translations are present in the store
-$i18n.localeExists(locale), Vue.i18n.localeExists(locale)
+$i18n.localeExists(locale), app.config.globalProperties.$i18n.localeExists(locale)
 
 // check if the given key is available (will check current, regional and fallback locale)
-$i18n.keyExists(key), Vue.i18n.keyExists(key)
+$i18n.keyExists(key), app.config.globalProperties.$i18n.keyExists(key)
 
 // optional with a second parameter to limit the scope
 // strict: only current locale (exact match)

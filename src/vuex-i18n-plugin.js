@@ -1,6 +1,6 @@
 /* vuex-i18n defines the Vuexi18nPlugin to enable localization using a vuex
  ** module to store the translation information. Make sure to also include the
- ** file vuex-i18n-app.config.globalProperties.$store.js to include a respective vuex module.
+ ** file vuex-i18n-defaultStore.js to include a respective vuex module.
  */
 
 import module from "./vuex-i18n-store";
@@ -10,7 +10,7 @@ import plurals from "./vuex-i18n-plurals";
 let VuexI18nPlugin = {};
 
 // internationalization plugin for vue js using vuex
-VuexI18nPlugin.install = function install(app, config) {
+VuexI18nPlugin.install = function install(app, store, config) {
   // TODO: remove this block for next major update (API break)
   if (typeof arguments[2] === "string" || typeof arguments[3] === "string") {
     console.warn(
@@ -53,9 +53,10 @@ VuexI18nPlugin.install = function install(app, config) {
     onTranslationNotFound = function () {};
   }
 
-  if (!app.config.globalProperties?.$store) {
+  const defaultStore = store || app.config.globalProperties?.$store;
+  if (!defaultStore) {
     console.error(
-      "i18n: i18n vuex module is not correctly initialized. Please check the module name:",
+      "i18n: i18n vuex module is not correctly initialized.",
       moduleName,
     );
     return;
@@ -63,15 +64,12 @@ VuexI18nPlugin.install = function install(app, config) {
 
   // register the i18n module in the vuex store
   // preserveState can be used via configuration if server side rendering is used
-  app.config.globalProperties.$store.registerModule(moduleName, module, {
+  defaultStore.registerModule(moduleName, module, {
     preserveState: config.preserveState,
   });
 
   // check if the plugin was correctly initialized
-  if (
-    app.config.globalProperties.$store.state.hasOwnProperty(moduleName) ===
-    false
-  ) {
+  if (defaultStore.state.hasOwnProperty(moduleName) === false) {
     console.error(
       "i18n: i18n vuex module is not correctly initialized. Please check the module name:",
       moduleName,
@@ -96,11 +94,11 @@ VuexI18nPlugin.install = function install(app, config) {
   // initialize the replacement function
   let render = renderFn(identifiers, config.warnings);
 
-  // get localized string from app.config.globalProperties.$store. note that we pass the arguments passed
+  // get localized string from defaultStore. note that we pass the arguments passed
   // to the function directly to the translateInLanguage function
   let translate = function $t() {
     // get the current language from the store
-    let locale = app.config.globalProperties.$store.state[moduleName].locale;
+    let locale = defaultStore.state[moduleName].locale;
 
     return translateInLanguage(locale, ...arguments);
   };
@@ -160,12 +158,10 @@ VuexI18nPlugin.install = function install(app, config) {
     }
 
     // get the translations from the store
-    let translations =
-      app.config.globalProperties.$store.state[moduleName].translations;
+    let translations = defaultStore.state[moduleName].translations;
 
     // get the last resort fallback from the store
-    let fallback =
-      app.config.globalProperties.$store.state[moduleName].fallback;
+    let fallback = defaultStore.state[moduleName].fallback;
 
     // split locale by - to support partial fallback for regional locales
     // like de-CH, en-UK
@@ -174,11 +170,11 @@ VuexI18nPlugin.install = function install(app, config) {
     // flag for translation to exist or not
     let translationExists = true;
 
-    // check if the language exists in the app.config.globalProperties.$store. return the key if not
+    // check if the language exists in the defaultStore. return the key if not
     if (translations.hasOwnProperty(locale) === false) {
       translationExists = false;
 
-      // check if the key exists in the app.config.globalProperties.$store. return the key if not
+      // check if the key exists in the defaultStore. return the key if not
     } else if (translations[locale].hasOwnProperty(key) === false) {
       translationExists = false;
     }
@@ -215,13 +211,13 @@ VuexI18nPlugin.install = function install(app, config) {
       });
     }
 
-    // check if a vaild fallback exists in the app.config.globalProperties.$store.
+    // check if a vaild fallback exists in the defaultStore.
     // return the default value if not
     if (translations.hasOwnProperty(fallback) === false) {
       return render(locale, defaultValue, options, pluralization);
     }
 
-    // check if the key exists in the fallback locale in the app.config.globalProperties.$store.
+    // check if the key exists in the fallback locale in the defaultStore.
     // return the default value if not
     if (translations[fallback].hasOwnProperty(key) === false) {
       return render(fallback, defaultValue, options, pluralization);
@@ -242,11 +238,9 @@ VuexI18nPlugin.install = function install(app, config) {
   // check if the given key exists in the current locale
   let checkKeyExists = function checkKeyExists(key, scope = "fallback") {
     // get the current language from the store
-    let locale = app.config.globalProperties.$store.state[moduleName].locale;
-    let fallback =
-      app.config.globalProperties.$store.state[moduleName].fallback;
-    let translations =
-      app.config.globalProperties.$store.state[moduleName].translations;
+    let locale = defaultStore.state[moduleName].locale;
+    let fallback = defaultStore.state[moduleName].fallback;
+    let translations = defaultStore.state[moduleName].translations;
 
     // check the current translation
     if (
@@ -289,7 +283,7 @@ VuexI18nPlugin.install = function install(app, config) {
 
   // set fallback locale
   let setFallbackLocale = function setFallbackLocale(locale) {
-    app.config.globalProperties.$store.dispatch({
+    defaultStore.dispatch({
       type: `${moduleName}/setFallbackLocale`,
       locale: locale,
     });
@@ -297,7 +291,7 @@ VuexI18nPlugin.install = function install(app, config) {
 
   // set the current locale
   let setLocale = function setLocale(locale) {
-    app.config.globalProperties.$store.dispatch({
+    defaultStore.dispatch({
       type: `${moduleName}/setLocale`,
       locale: locale,
     });
@@ -305,19 +299,17 @@ VuexI18nPlugin.install = function install(app, config) {
 
   // get the current locale
   let getLocale = function getLocale() {
-    return app.config.globalProperties.$store.state[moduleName].locale;
+    return defaultStore.state[moduleName].locale;
   };
 
   // get all available locales
   let getLocales = function getLocales() {
-    return Object.keys(
-      app.config.globalProperties.$store.state[moduleName].translations,
-    );
+    return Object.keys(defaultStore.state[moduleName].translations);
   };
 
   // add predefined translations to the store (keeping existing information)
   let addLocale = function addLocale(locale, translations) {
-    return app.config.globalProperties.$store.dispatch({
+    return defaultStore.dispatch({
       type: `${moduleName}/addLocale`,
       locale: locale,
       translations: translations,
@@ -326,7 +318,7 @@ VuexI18nPlugin.install = function install(app, config) {
 
   // replace all locale information in the store
   let replaceLocale = function replaceLocale(locale, translations) {
-    return app.config.globalProperties.$store.dispatch({
+    return defaultStore.dispatch({
       type: `${moduleName}/replaceLocale`,
       locale: locale,
       translations: translations,
@@ -335,12 +327,8 @@ VuexI18nPlugin.install = function install(app, config) {
 
   // remove the givne locale from the store
   let removeLocale = function removeLocale(locale) {
-    if (
-      app.config.globalProperties.$store.state[
-        moduleName
-      ].translations.hasOwnProperty(locale)
-    ) {
-      app.config.globalProperties.$store.dispatch({
+    if (defaultStore.state[moduleName].translations.hasOwnProperty(locale)) {
+      defaultStore.dispatch({
         type: `${moduleName}/removeLocale`,
         locale: locale,
       });
@@ -358,9 +346,7 @@ VuexI18nPlugin.install = function install(app, config) {
 
   // check if the given locale is already loaded
   let checkLocaleExists = function checkLocaleExists(locale) {
-    return app.config.globalProperties.$store.state[
-      moduleName
-    ].translations.hasOwnProperty(locale);
+    return defaultStore.state[moduleName].translations.hasOwnProperty(locale);
   };
 
   // register vue prototype methods
