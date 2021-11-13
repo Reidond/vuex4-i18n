@@ -93,8 +93,8 @@ const flattenTranslations = function flattenTranslations2(translations) {
     let objType = typeof translations[i];
     if (isArray$1(translations[i])) {
       let count = translations[i].length;
-      for (let index2 = 0; index2 < count; index2++) {
-        let itemType = typeof translations[i][index2];
+      for (let index = 0; index < count; index++) {
+        let itemType = typeof translations[i][index];
         if (itemType !== "string") {
           console.warn("i18n:", "currently only arrays of strings are fully supported", translations[i]);
           break;
@@ -214,7 +214,8 @@ var plurals = {
   }
 };
 let VuexI18nPlugin = {};
-VuexI18nPlugin.install = function install(Vue, store, config) {
+VuexI18nPlugin.install = function install(app, store, config) {
+  var _a, _b, _c, _d;
   if (typeof arguments[2] === "string" || typeof arguments[3] === "string") {
     console.warn("i18n: Registering the plugin vuex-i18n with a string for `moduleName` or `identifiers` is deprecated. Use a configuration object instead.", "https://github.com/dkfbasel/vuex-i18n#setup");
     config = {
@@ -222,6 +223,8 @@ VuexI18nPlugin.install = function install(Vue, store, config) {
       identifiers: arguments[3]
     };
   }
+  const globalInstance = ((_a = app == null ? void 0 : app.config) == null ? void 0 : _a.globalProperties) || app;
+  const prototypeInstance = ((_b = app == null ? void 0 : app.config) == null ? void 0 : _b.globalProperties) || app.prototype;
   config = Object.assign({
     warnings: true,
     moduleName: "i18n",
@@ -234,33 +237,38 @@ VuexI18nPlugin.install = function install(Vue, store, config) {
   }, config);
   const moduleName = config.moduleName;
   const identifiers = config.identifiers;
-  const translateFilterName = config.translateFilterName;
-  const translateInFilterName = config.translateInFilterName;
+  config.translateFilterName;
+  config.translateInFilterName;
   let onTranslationNotFound = config.onTranslationNotFound;
   if (typeof onTranslationNotFound !== "function") {
     console.error("i18n: i18n config option onTranslationNotFound must be a function");
     onTranslationNotFound = function() {
     };
   }
-  store.registerModule(moduleName, i18nVuexModule, {
+  const defaultStore = store || ((_d = (_c = app == null ? void 0 : app.config) == null ? void 0 : _c.globalProperties) == null ? void 0 : _d.$store);
+  if (!defaultStore) {
+    console.error("i18n: i18n vuex module is not correctly initialized.", moduleName);
+    return;
+  }
+  defaultStore.registerModule(moduleName, i18nVuexModule, {
     preserveState: config.preserveState
   });
-  if (store.state.hasOwnProperty(moduleName) === false) {
+  if (defaultStore.state.hasOwnProperty(moduleName) === false) {
     console.error("i18n: i18n vuex module is not correctly initialized. Please check the module name:", moduleName);
-    Vue.prototype.$i18n = function(key) {
+    prototypeInstance.$i18n = function(key) {
       return key;
     };
-    Vue.prototype.$getLanguage = function() {
+    prototypeInstance.$getLanguage = function() {
       return null;
     };
-    Vue.prototype.$setLanguage = function() {
+    prototypeInstance.$setLanguage = function() {
       console.error("i18n: i18n vuex module is not correctly initialized");
     };
     return;
   }
   let render = renderFn(identifiers, config.warnings);
   let translate = function $t() {
-    let locale = store.state[moduleName].locale;
+    let locale = defaultStore.state[moduleName].locale;
     return translateInLanguage(locale, ...arguments);
   };
   let translateInLanguage = function translateInLanguage2(locale) {
@@ -294,8 +302,8 @@ VuexI18nPlugin.install = function install(Vue, store, config) {
         console.warn("i18n: i18n locale is not set when trying to access translations:", key);
       return defaultValue;
     }
-    let translations = store.state[moduleName].translations;
-    let fallback = store.state[moduleName].fallback;
+    let translations = defaultStore.state[moduleName].translations;
+    let fallback = defaultStore.state[moduleName].fallback;
     let localeRegional = locale.split("-");
     let translationExists = true;
     if (translations.hasOwnProperty(locale) === false) {
@@ -325,13 +333,10 @@ VuexI18nPlugin.install = function install(Vue, store, config) {
     }
     return render(locale, translations[fallback][key], options, pluralization);
   };
-  let translateInLanguageFilter = function translateInLanguageFilter2(key, locale, ...args) {
-    return translateInLanguage(locale, key, ...args);
-  };
   let checkKeyExists = function checkKeyExists2(key, scope = "fallback") {
-    let locale = store.state[moduleName].locale;
-    let fallback = store.state[moduleName].fallback;
-    let translations = store.state[moduleName].translations;
+    let locale = defaultStore.state[moduleName].locale;
+    let fallback = defaultStore.state[moduleName].fallback;
+    let translations = defaultStore.state[moduleName].translations;
     if (translations.hasOwnProperty(locale) && translations[locale].hasOwnProperty(key)) {
       return true;
     }
@@ -351,40 +356,40 @@ VuexI18nPlugin.install = function install(Vue, store, config) {
     return false;
   };
   let setFallbackLocale = function setFallbackLocale2(locale) {
-    store.dispatch({
+    defaultStore.dispatch({
       type: `${moduleName}/setFallbackLocale`,
       locale
     });
   };
   let setLocale = function setLocale2(locale) {
-    store.dispatch({
+    defaultStore.dispatch({
       type: `${moduleName}/setLocale`,
       locale
     });
   };
   let getLocale = function getLocale2() {
-    return store.state[moduleName].locale;
+    return defaultStore.state[moduleName].locale;
   };
   let getLocales = function getLocales2() {
-    return Object.keys(store.state[moduleName].translations);
+    return Object.keys(defaultStore.state[moduleName].translations);
   };
   let addLocale = function addLocale2(locale, translations) {
-    return store.dispatch({
+    return defaultStore.dispatch({
       type: `${moduleName}/addLocale`,
       locale,
       translations
     });
   };
   let replaceLocale = function replaceLocale2(locale, translations) {
-    return store.dispatch({
+    return defaultStore.dispatch({
       type: `${moduleName}/replaceLocale`,
       locale,
       translations
     });
   };
   let removeLocale = function removeLocale2(locale) {
-    if (store.state[moduleName].translations.hasOwnProperty(locale)) {
-      store.dispatch({
+    if (defaultStore.state[moduleName].translations.hasOwnProperty(locale)) {
+      defaultStore.dispatch({
         type: `${moduleName}/removeLocale`,
         locale
       });
@@ -396,9 +401,9 @@ VuexI18nPlugin.install = function install(Vue, store, config) {
     return checkLocaleExists(locale);
   };
   let checkLocaleExists = function checkLocaleExists2(locale) {
-    return store.state[moduleName].translations.hasOwnProperty(locale);
+    return defaultStore.state[moduleName].translations.hasOwnProperty(locale);
   };
-  Vue.prototype.$i18n = {
+  prototypeInstance.$i18n = {
     locale: getLocale,
     locales: getLocales,
     set: setLocale,
@@ -412,7 +417,7 @@ VuexI18nPlugin.install = function install(Vue, store, config) {
     translateIn: translateInLanguage,
     exists: phaseOutExistsFn
   };
-  Vue.i18n = {
+  globalInstance.i18n = {
     locale: getLocale,
     locales: getLocales,
     set: setLocale,
@@ -426,10 +431,8 @@ VuexI18nPlugin.install = function install(Vue, store, config) {
     keyExists: checkKeyExists,
     exists: phaseOutExistsFn
   };
-  Vue.prototype.$t = translate;
-  Vue.prototype.$tlang = translateInLanguage;
-  Vue.filter(translateFilterName, translate);
-  Vue.filter(translateInFilterName, translateInLanguageFilter);
+  prototypeInstance.$t = translate;
+  prototypeInstance.$tlang = translateInLanguage;
 };
 let renderFn = function(identifiers, warnings = true) {
   if (identifiers == null || identifiers.length != 2) {
@@ -483,22 +486,18 @@ let renderFn = function(identifiers, warnings = true) {
     } else {
       pluralizations = resolvedTranslation.split(":::");
     }
-    let index2 = plurals.getTranslationIndex(locale, pluralization);
-    if (typeof pluralizations[index2] === "undefined") {
+    let index = plurals.getTranslationIndex(locale, pluralization);
+    if (typeof pluralizations[index] === "undefined") {
       if (warnings) {
-        console.warn("i18n: pluralization not provided in locale", translation, locale, index2);
+        console.warn("i18n: pluralization not provided in locale", translation, locale, index);
       }
       return pluralizations[0].trim();
     }
-    return pluralizations[index2].trim();
+    return pluralizations[index].trim();
   };
   return render;
 };
 function isArray(obj) {
   return !!obj && Array === obj.constructor;
 }
-var index = {
-  store: i18nVuexModule,
-  plugin: VuexI18nPlugin
-};
-export { index as default };
+export { VuexI18nPlugin, i18nVuexModule };
