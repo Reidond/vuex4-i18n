@@ -1,6 +1,6 @@
 {
   "name": "vuex4-i18n",
-  "version": "4.0.3",
+  "version": "4.0.4",
   "description": "Easy localization for vue-components using vuex as data store",
   "directories": {
     "test": "test",
@@ -32,7 +32,8 @@
     "build:vue2": "vite build --config vite-example-vue2.config.js ./example-vue2",
     "serve": "vite preview --config vite-example.config.js ./example",
     "serve:vue2": "vite preview --config vite-example-vue2.config.js ./example-vue2",
-    "build:lib": "vite build"
+    "build:lib": "vite build",
+    "prepublishOnly": "yarn build:lib"
   },
   "keywords": [
     "localization",
