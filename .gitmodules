@@ -1,0 +1,3 @@
+[submodule "vite-plugin-vue2"]
+	path = vite-plugin-vue2
+	url = https://github.com/Reidond/vite-plugin-vue2
