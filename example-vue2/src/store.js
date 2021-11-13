@@ -1,7 +1,10 @@
-import { createStore } from "vuex";
+import Vue from "vue2";
+import Vuex from "vuex3";
 import storeModule from "../../example-shared/store/index";
 
-const store = createStore({
+Vue.use(Vuex);
+
+const store = new Vuex.Store({
   ...storeModule,
 });
 

@@ -15,8 +15,8 @@ app.use(store);
 app.use(router);
 app.use(VuexI18nPlugin);
 
-import translationsEn from "./i18n/en.js";
-import translationsDe from "./i18n/de.js";
+import translationsEn from "../../example-shared/i18n/en.js";
+import translationsDe from "../../example-shared/i18n/de.js";
 
 app.config.globalProperties.$i18n.add("en", translationsEn);
 app.config.globalProperties.$i18n.add("de", translationsDe);

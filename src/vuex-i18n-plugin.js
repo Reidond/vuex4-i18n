@@ -23,6 +23,9 @@ VuexI18nPlugin.install = function install(app, store, config) {
     };
   }
 
+  const globalInstance = app?.config?.globalProperties || app;
+  const prototypeInstance = app?.config?.globalProperties || app.prototype;
+
   // merge default options with user supplied options
   config = Object.assign(
     {
@@ -53,7 +56,7 @@ VuexI18nPlugin.install = function install(app, store, config) {
     onTranslationNotFound = function () {};
   }
 
-  const defaultStore = store || app.config.globalProperties?.$store;
+  const defaultStore = store || app?.config?.globalProperties?.$store;
   if (!defaultStore) {
     console.error(
       "i18n: i18n vuex module is not correctly initialized.",
@@ -76,15 +79,15 @@ VuexI18nPlugin.install = function install(app, store, config) {
     );
 
     // always return the key if module is not initialized correctly
-    app.config.globalProperties.$i18n = function (key) {
+    prototypeInstance.$i18n = function (key) {
       return key;
     };
 
-    app.config.globalProperties.$getLanguage = function () {
+    prototypeInstance.$getLanguage = function () {
       return null;
     };
 
-    app.config.globalProperties.$setLanguage = function () {
+    prototypeInstance.$setLanguage = function () {
       console.error("i18n: i18n vuex module is not correctly initialized");
     };
 
@@ -350,7 +353,7 @@ VuexI18nPlugin.install = function install(app, store, config) {
   };
 
   // register vue prototype methods
-  app.config.globalProperties.$i18n = {
+  prototypeInstance.$i18n = {
     locale: getLocale,
     locales: getLocales,
     set: setLocale,
@@ -367,11 +370,27 @@ VuexI18nPlugin.install = function install(app, store, config) {
     exists: phaseOutExistsFn,
   };
 
+  globalInstance.i18n = {
+    locale: getLocale,
+    locales: getLocales,
+    set: setLocale,
+    add: addLocale,
+    replace: replaceLocale,
+    remove: removeLocale,
+    fallback: setFallbackLocale,
+    translate: translate,
+    translateIn: translateInLanguage,
+    localeExists: checkLocaleExists,
+    keyExists: checkKeyExists,
+
+    exists: phaseOutExistsFn,
+  };
+
   // register the translation function on the vue instance directly
-  app.config.globalProperties.$t = translate;
+  prototypeInstance.$t = translate;
 
   // register the specific language translation function on the vue instance directly
-  app.config.globalProperties.$tlang = translateInLanguage;
+  prototypeInstance.$tlang = translateInLanguage;
 };
 
 // renderFn will initialize a function to render the variable substitutions in

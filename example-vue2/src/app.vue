@@ -5,7 +5,6 @@ export default {
   components: {
     Intro,
   },
-  setup() {},
 };
 </script>
 
